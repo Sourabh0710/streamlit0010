@@ -18,9 +18,7 @@ if st.button("Fetch and Summarize"):
         try:
             # Fetch the web page content
             response = requests.get(link)
-            if response.status_code != 200:
-                st.error("Failed to retrieve the web page.")
-                return
+            response.raise_for_status()  # Raise an HTTPError for bad responses
 
             # Parse the web page using BeautifulSoup
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -29,6 +27,11 @@ if st.button("Fetch and Summarize"):
             article_text = ""
             for paragraph in soup.find_all('p'):
                 article_text += paragraph.text + "\n"
+
+            # Check if article text is empty
+            if not article_text.strip():
+                st.warning("No article text found on the web page.")
+                return
 
             # Summarize the article using the T5 model
             input_text = "summarize: " + article_text
@@ -41,9 +44,10 @@ if st.button("Fetch and Summarize"):
             st.subheader("Summary:")
             st.write(summary)
 
+        except requests.exceptions.RequestException as req_err:
+            st.error(f"Failed to retrieve the web page. Error: {str(req_err)}")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-
 
     # Call the fetch_and_summarize function with the user-provided link
     if supplier_link:
